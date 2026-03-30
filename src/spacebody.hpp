@@ -10,9 +10,11 @@ public:
     float angle;
     SpaceBody* parent;
     sf::CircleShape outline;
+    sf::Text label;
+    std::string name;
 
-    SpaceBody(float size, sf::Color color, float dist, float speed, SpaceBody* p = nullptr)
-        : orbitRadius(dist), orbitSpeed(speed), angle(0.f), parent(p) {
+    SpaceBody(const sf::Font& font,std::string n,float size, sf::Color color, float dist, float speed, SpaceBody* p = nullptr)
+        : orbitRadius(dist), orbitSpeed(speed), angle(0.f), parent(p), label(font, n), name(n) {
 
         orbitRadii = {dist, dist}; // Default to circular
 
@@ -29,9 +31,14 @@ public:
         if (!parent) {
             shape.setPosition({400.f, 400.f});
         }
+
+        if (color == sf::Color(200, 230, 255)) { // If it's our comet color
+            shape.setOutlineThickness(2.f);
+            shape.setOutlineColor(sf::Color(255, 255, 255, 150));
+        }
     }
 
-    void update(float dt) {
+    void update(float dt, float zoomLevel) {
         angle += orbitSpeed * dt;
 
         if (parent) {
@@ -44,12 +51,16 @@ public:
             outline.setOrigin({orbitRadii.x, orbitRadii.x});
             outline.setScale({1.0f, orbitRadii.y / orbitRadii.x});
         }
+
+        label.setPosition({shape.getPosition().x, shape.getPosition().y + 20.0f});
+        label.setScale({zoomLevel, zoomLevel});
     }
 
     void draw(sf::RenderWindow& window) {
         if (parent) {
-                window.draw(outline);
-            }
-            window.draw(shape);
+            window.draw(outline);
+        }
+        window.draw(shape);
+        window.draw(label);
     }
 };

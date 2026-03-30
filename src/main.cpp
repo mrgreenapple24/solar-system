@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include <cstdio>
 #include <list>
 #include "spacebody.hpp"
 #include <random>
@@ -25,15 +26,25 @@ int main() {
         stars[i].color = sf::Color(brightness, brightness, brightness);
     }
 
-    SpaceBody sun(40.f, sf::Color::Yellow, 0.f, 0.f);
+
+    sf::Font font;
+    if (!font.openFromFile("assets/SpaceFont.ttf")) {
+        printf("Failed to load font\n");
+        return 1;
+    }
+
+    SpaceBody sun(font, "Sun",40.f, sf::Color::Yellow, 0.f, 0.f);
+    sun.label.setPosition({420.0f, 440.0f});
 
     std::list<SpaceBody> bodies;
-    bodies.emplace_back(SpaceBody(7.f, sf::Color::Red, 50.0f, 2.5f, &sun));
-    bodies.emplace_back(SpaceBody(9.f, sf::Color::Blue, 100.0f, 2.0f, &sun));
-    bodies.emplace_back(SpaceBody(15.f, sf::Color::Green, 150.f, 1.5f, &sun));    // Earth
+    bodies.emplace_back(SpaceBody(font, "Mercury", 7.f, sf::Color::Red, 50.0f, 2.5f, &sun));
+    bodies.emplace_back(SpaceBody(font, "Venus", 9.f, sf::Color::Blue, 100.0f, 2.0f, &sun));
+    bodies.emplace_back(SpaceBody(font, "Earth", 15.f, sf::Color::Green, 150.f, 1.5f, &sun));    // Earth
     bodies.back().orbitRadii = {200.f, 150.f};
-    bodies.emplace_back(SpaceBody(5.f, sf::Color::White, 30.f, 2.5f, &bodies.back())); // Moon (orbits Earth)
-    bodies.emplace_back(SpaceBody(20.f, sf::Color::Red, 280.f, 1.0f, &sun));     // Mars
+    bodies.emplace_back(SpaceBody(font,"Moon", 5.f, sf::Color::White, 30.f, 2.5f, &bodies.back())); // Moon (orbits Earth)
+    bodies.emplace_back(SpaceBody(font,"Mars", 20.f, sf::Color::Red, 280.f, 1.0f, &sun));     // Mars
+    bodies.emplace_back(SpaceBody(font,"Comet", 4.f, sf::Color(200, 230, 255), 400.f, 0.4f, &sun));
+    bodies.back().orbitRadii = {600.f, 150.f};
 
     while (window.isOpen()) {
         float dt = clock.restart().asSeconds();
@@ -55,7 +66,7 @@ int main() {
         }
 
         // Update all
-        for (auto& b : bodies) b.update(dt);
+        for (auto& b : bodies) b.update(dt, zoomLevel);
         float cameraSpeed = 200.f * dt; // Adjust by delta time
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))  camera.move({-cameraSpeed, 0.f});
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)) camera.move({cameraSpeed, 0.f});
