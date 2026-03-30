@@ -1,11 +1,26 @@
 #include <SFML/Graphics.hpp>
 #include <list>
 #include "spacebody.hpp"
+#include <random>
 
 int main() {
+    const int starCount = 500;
+    sf::VertexArray stars(sf::PrimitiveType::Points, starCount);
+
     sf::RenderWindow window(sf::VideoMode({800, 800}), "Advanced Solar System");
     window.setFramerateLimit(60);
     sf::Clock clock;
+
+    std::mt19937 gen(static_cast<unsigned>(time(nullptr)));
+    std::uniform_real_distribution<float> dist(0.f, 800.f);
+    std::uniform_int_distribution<int> colorDist(150, 255);
+
+    for (int i = 0; i < starCount; ++i) {
+        stars[i].position = {dist(gen), dist(gen)};
+
+        uint8_t brightness = static_cast<uint8_t>(colorDist(gen));
+        stars[i].color = sf::Color(brightness, brightness, brightness);
+    }
 
     SpaceBody sun(40.f, sf::Color::Yellow, 0.f, 0.f);
 
@@ -30,6 +45,7 @@ int main() {
 
 
         window.clear(sf::Color(5, 5, 15));
+        window.draw(stars);
         sun.draw(window);
 
         for (auto& b : bodies) {
