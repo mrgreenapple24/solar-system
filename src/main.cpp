@@ -4,7 +4,7 @@
 #include <random>
 
 int main() {
-    const int starCount = 500;
+    const int starCount = 2000;
     sf::VertexArray stars(sf::PrimitiveType::Points, starCount);
 
     sf::RenderWindow window(sf::VideoMode({800, 800}), "Advanced Solar System");
@@ -12,8 +12,11 @@ int main() {
     sf::Clock clock;
 
     std::mt19937 gen(static_cast<unsigned>(time(nullptr)));
-    std::uniform_real_distribution<float> dist(0.f, 800.f);
+    std::uniform_real_distribution<float> dist(-5000.f, 5000.f);
     std::uniform_int_distribution<int> colorDist(150, 255);
+
+    sf::View camera(sf::FloatRect({0.f, 0.f}, {800.f, 800.f}));
+    float zoomLevel = 1.0f;
 
     for (int i = 0; i < starCount; ++i) {
         stars[i].position = {dist(gen), dist(gen)};
@@ -34,17 +37,34 @@ int main() {
 
     while (window.isOpen()) {
         float dt = clock.restart().asSeconds();
-        while ( const std::optional event = window.pollEvent() )
-		{
-			if ( event->is<sf::Event::Closed>() )
-				window.close();
-		}
+
+        // Fix: Move pollEvent into the loop condition
+        while (const std::optional event = window.pollEvent()) {
+            if (event->is<sf::Event::Closed>()) {
+                window.close();
+            }
+
+            // Move the zoom logic inside here so it's only checked when an event happens
+            if (const auto* mouseWheel = event->getIf<sf::Event::MouseWheelScrolled>()) {
+                if (mouseWheel->wheel == sf::Mouse::Wheel::Vertical) {
+                    float zoomFactor = (mouseWheel->delta > 0) ? 0.9f : 1.1f;
+                    camera.zoom(zoomFactor);
+                    zoomLevel *= zoomFactor;
+                }
+            }
+        }
 
         // Update all
         for (auto& b : bodies) b.update(dt);
+        float cameraSpeed = 200.f * dt; // Adjust by delta time
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))  camera.move({-cameraSpeed, 0.f});
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)) camera.move({cameraSpeed, 0.f});
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))    camera.move({0.f, -cameraSpeed});
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))  camera.move({0.f, cameraSpeed});
 
 
         window.clear(sf::Color(5, 5, 15));
+        window.setView(camera);
         window.draw(stars);
         sun.draw(window);
 
