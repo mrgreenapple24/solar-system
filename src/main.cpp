@@ -18,6 +18,7 @@ int main() {
 
     sf::View camera(sf::FloatRect({0.f, 0.f}, {800.f, 800.f}));
     float zoomLevel = 1.0f;
+    float timeScale = 1.0f;
 
     for (int i = 0; i < starCount; ++i) {
         stars[i].position = {dist(gen), dist(gen)};
@@ -49,13 +50,11 @@ int main() {
     while (window.isOpen()) {
         float dt = clock.restart().asSeconds();
 
-        // Fix: Move pollEvent into the loop condition
         while (const std::optional event = window.pollEvent()) {
             if (event->is<sf::Event::Closed>()) {
                 window.close();
             }
 
-            // Move the zoom logic inside here so it's only checked when an event happens
             if (const auto* mouseWheel = event->getIf<sf::Event::MouseWheelScrolled>()) {
                 if (mouseWheel->wheel == sf::Mouse::Wheel::Vertical) {
                     float zoomFactor = (mouseWheel->delta > 0) ? 0.9f : 1.1f;
@@ -65,13 +64,22 @@ int main() {
             }
         }
 
-        // Update all
-        for (auto& b : bodies) b.update(dt, zoomLevel);
-        float cameraSpeed = 200.f * dt; // Adjust by delta time
+        for (auto& b : bodies) b.update(dt* timeScale, zoomLevel);
+        float cameraSpeed = 200.f * dt;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))  camera.move({-cameraSpeed, 0.f});
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)) camera.move({cameraSpeed, 0.f});
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))    camera.move({0.f, -cameraSpeed});
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))  camera.move({0.f, cameraSpeed});
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Equal)) { // The '+' key (usually needs Shift, but '=' is the base)
+            timeScale += 0.2f;
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Hyphen)) { // The '-' key
+            timeScale -= 0.2f;
+            if (timeScale < 0.0f) timeScale = 0.0f; // Prevent reverse time (unless you want it!)
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::P)) {
+            timeScale = (timeScale == 0.0f) ? 1.0f : 0.0f; // Toggle Pause
+        }
 
 
         window.clear(sf::Color(5, 5, 15));
@@ -82,6 +90,13 @@ int main() {
         for (auto& b : bodies) {
             b.draw(window);
         }
+        window.setView(window.getDefaultView());
+
+        sf::Text hud(font, "Time Scale: " + std::to_string(timeScale).substr(0, 4) + "x");
+        hud.setCharacterSize(20);
+        hud.setFillColor(sf::Color::Cyan);
+        hud.setPosition({10.f, 10.f});
+        window.draw(hud);
         window.display();
     }
     return 0;
